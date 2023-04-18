@@ -1,0 +1,20 @@
+FROM golang:alpine AS build
+
+COPY . /websocket
+
+WORKDIR /websocket
+
+RUN apk add upx 
+
+RUN go build -ldflags="-s -w" -o server server.go && upx server
+
+FROM scratch
+
+COPY --from=build /websocket/server /server
+COPY --from=build /websocket/server.crt /server.crt
+COPY --from=build /websocket/server.key /server.key
+COPY --from=build /websocket/ca.crt /ca.crt
+
+EXPOSE 8080 8443
+
+CMD ["/server"]
